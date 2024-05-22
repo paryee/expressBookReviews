@@ -68,6 +68,40 @@ regd_users.put("/auth/review/:isbn", (req, res) => {
   return res.status(200).json({ message: "Review added successfully" });
   return res.status(300).json({message: "Yet to be implemented"});
 });
+regd_users.delete("/auth/review/:isbn", (req, res) => {
+  const isbn = req.params.isbn;
+  const username = req.session.username; // Assuming username is stored in session
+
+  // Find the book document containing the reviews
+  Book.findOne({ isbn }, (err, book) => {
+    if (err) {
+      return res.status(500).send("Error finding book");
+    }
+
+    if (!book) {
+      return res.status(404).send("Book not found");
+    }
+
+    // Filter reviews based on username
+    const filteredReviews = book.reviews.filter(review => review.username === username);
+
+    // Check if any reviews found for the user
+    if (filteredReviews.length === 0) {
+      return res.status(404).send("No reviews found for this user");
+    }
+
+    // Update the book document with filtered reviews
+    book.reviews = filteredReviews;
+    book.save((err) => {
+      if (err) {
+        return res.status(500).send("Error deleting review");
+      }
+
+      res.status(200).send("Review deleted successfully");
+    });
+  });
+});
+
 
 module.exports.authenticated = regd_users;
 module.exports.isValid = isValid;
